@@ -6,34 +6,53 @@
 # This pipeline builds a Java project with Maven
 # https://aka.ms/yaml
 
+# This is a multi-stage pipeline for building and deploying a Java app
+
 trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest' # Use a Linux agent for Java builds
+  vmImage: 'ubuntu-latest'
 
-steps:
-- task: Maven@3
-  displayName: 'Build with Maven'
-  inputs:
-    mavenPomFile: 'pom.xml' # Or the correct path to your pom.xml if it's not in the root
-    mavenOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.11' # Or 1.8, 1.17, etc., depending on your project
-    jdkArchitectureOption: 'x64'
-    publishJUnitTestResults: true
-    testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'package' # This compiles and packages the code into a .war or .jar file
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Maven Project'
+    steps:
+    - task: Maven@3
+      displayName: 'Build with Maven'
+      inputs:
+        mavenPomFile: 'pom.xml'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.11' # Or 1.8, 1.17
+        jdkArchitectureOption: 'x64'
+        publishJUnitTestResults: false # Set to false if you have no tests
+        testResultsFiles: '**/surefire-reports/TEST-*.xml'
+        goals: 'package'
 
-- task: CopyFiles@2
-  displayName: 'Copy Files to Artifact Staging Directory'
-  inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)'
-    Contents: '**/*.war' # Find the .war file
-    TargetFolder: '$(build.artifactstagingdirectory)'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact'
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build # This stage will only run if the Build stage succeeds
+  condition: succeeded()
+  jobs:
+  - job: DeployJob
+    displayName: 'Deploy to Azure App Service'
+    steps:
+    - task: AzureWebApp@1
+      displayName: 'Deploy WAR to App Service'
+      inputs:
+        azureSubscription: 'Azure-Subscription-Connection' # <-- IMPORTANT: Use the name of the service connection you created
+        appType: 'webAppLinux'
+        appName: 'elango-my-shuttle-app' # <-- IMPORTANT: Use the name of your Azure App Service
+        package: '$(Pipeline.Workspace)/drop/**/*.war' # Path to the artifact
+        runtimeStack: 'TOMCAT|9.0-java11' # Or your specific Tomcat/Java version
+
