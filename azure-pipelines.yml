@@ -3,44 +3,37 @@
 # Add steps that publish symbols, save build artifacts, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
+# This pipeline builds a Java project with Maven
 # https://aka.ms/yaml
+
 trigger:
-- main # This pipeline will run on commits to the 'main' branch
+- main
 
 pool:
-  vmImage: 'windows-latest' # Use a Microsoft-hosted agent with Windows
-
-variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+  vmImage: 'ubuntu-latest' # Use a Linux agent for Java builds
 
 steps:
-- task: NuGetToolInstaller@1
-  displayName: 'Install NuGet'
-
-- task: NuGetCommand@2
-  displayName: 'Restore NuGet Packages'
+- task: Maven@3
+  displayName: 'Build with Maven'
   inputs:
-    restoreSolution: '$(solution)'
+    mavenPomFile: 'pom.xml' # Or the correct path to your pom.xml if it's not in the root
+    mavenOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.11' # Or 1.8, 1.17, etc., depending on your project
+    jdkArchitectureOption: 'x64'
+    publishJUnitTestResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    goals: 'package' # This compiles and packages the code into a .war or .jar file
 
-- task: VSBuild@1
-  displayName: 'Build solution'
+- task: CopyFiles@2
+  displayName: 'Copy Files to Artifact Staging Directory'
   inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-
-- task: VSTest@2
-  displayName: 'Run Unit Tests'
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    SourceFolder: '$(System.DefaultWorkingDirectory)'
+    Contents: '**/*.war' # Find the .war file
+    TargetFolder: '$(build.artifactstagingdirectory)'
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop' # The name of the artifact
-    publishLocation: 'Container'
+    ArtifactName: 'drop'
