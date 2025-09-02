@@ -47,7 +47,7 @@ stages:
       inputs:
         azureSubscription: 'Azure-Subscription-Connection'
         appType: 'webAppLinux'
-        appName: 'elango-my-shuttle-app'
+        appName: 'my-shuttle-app'
         package: '$(Pipeline.Workspace)/drop/**/*.war'
         runtimeStack: 'TOMCAT|9.0-java11'
 
