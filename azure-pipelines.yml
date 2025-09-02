@@ -13,12 +13,22 @@ stages:
   - job: BuildJob
     displayName: 'Build Maven Project'
     steps:
-    - task: Maven@4 # UPDATED to the latest version
+    
+    # NEW TASK: This will download and install JDK 11 for the pipeline to use.
+    - task: JavaToolInstaller@0
+      displayName: 'Install JDK 11'
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'Prebuilt'
+
+    - task: Maven@4
       displayName: 'Build with Maven'
       inputs:
         mavenPomFile: 'pom.xml'
+        # This now uses the JDK that was just installed by the task above
         javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '1.11' # Or 1.8, 1.17
+        jdkVersionOption: '1.11'
         jdkArchitectureOption: 'x64'
         publishJUnitTestResults: false
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
