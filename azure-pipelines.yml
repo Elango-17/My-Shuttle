@@ -1,4 +1,4 @@
-# This is a multi-stage pipeline for building and deploying a Java app
+# This YAML uses a manually installed JDK
 
 trigger:
 - main
@@ -7,26 +7,21 @@ pool:
   name: 'My-Local-Agents'
 
 stages:
-# Build Stage - No changes here
 - stage: Build
   displayName: 'Build Stage'
   jobs:
   - job: BuildJob
     displayName: 'Build Maven Project'
     steps:
-    - task: JavaToolInstaller@0
-      displayName: 'Install JDK 11'
-      inputs:
-        versionSpec: '11'
-        jdkArchitectureOption: 'x64'
-        jdkSourceOption: 'Prebuilt'
+    # The JavaToolInstaller task has been REMOVED.
 
     - task: Maven@4
       displayName: 'Build with Maven'
       inputs:
         mavenPomFile: 'pom.xml'
-        javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '1.11'
+        # These lines tell Maven to use the path from your environment variable
+        javaHomeOption: 'path'
+        jdkDirectory: '$(JAVA_HOME_11_X64)'
         jdkArchitectureOption: 'x64'
         publishJUnitTestResults: false
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
@@ -39,7 +34,6 @@ stages:
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
-# Deploy Stage - Corrected indentation is critical here
 - stage: Deploy
   displayName: 'Deploy Stage'
   dependsOn: Build
@@ -56,3 +50,4 @@ stages:
         appName: 'elango-my-shuttle-app'
         package: '$(Pipeline.Workspace)/drop/**/*.war'
         runtimeStack: 'TOMCAT|9.0-java11'
+
