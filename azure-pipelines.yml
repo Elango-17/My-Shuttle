@@ -3,7 +3,6 @@
 trigger:
 - main
 
-# CORRECTED: Use 'name' for self-hosted pools
 pool:
   name: 'My-Local-Agents'
 
@@ -14,14 +13,14 @@ stages:
   - job: BuildJob
     displayName: 'Build Maven Project'
     steps:
-    - task: Maven@3
+    - task: Maven@4 # UPDATED to the latest version
       displayName: 'Build with Maven'
       inputs:
         mavenPomFile: 'pom.xml'
         javaHomeOption: 'JDKVersion'
         jdkVersionOption: '1.11' # Or 1.8, 1.17
         jdkArchitectureOption: 'x64'
-        publishJUnitTestResults: false # Set to false if you have no tests
+        publishJUnitTestResults: false
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'package'
 
