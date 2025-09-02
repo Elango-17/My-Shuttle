@@ -1,18 +1,11 @@
-# ASP.NET Core (.NET Framework)
-# Build and test ASP.NET Core projects targeting the full .NET Framework.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
-# This pipeline builds a Java project with Maven
-# https://aka.ms/yaml
-
 # This is a multi-stage pipeline for building and deploying a Java app
 
 trigger:
 - main
 
+# CORRECTED: Use 'name' for self-hosted pools
 pool:
-  vmImage: 'My-Local-Agents'
+  name: 'My-Local-Agents'
 
 stages:
 - stage: Build
@@ -41,7 +34,7 @@ stages:
 
 - stage: Deploy
   displayName: 'Deploy Stage'
-  dependsOn: Build # This stage will only run if the Build stage succeeds
+  dependsOn: Build
   condition: succeeded()
   jobs:
   - job: DeployJob
@@ -50,9 +43,9 @@ stages:
     - task: AzureWebApp@1
       displayName: 'Deploy WAR to App Service'
       inputs:
-        azureSubscription: 'Azure-Subscription-Connection' # <-- IMPORTANT: Use the name of the service connection you created
+        azureSubscription: 'Azure-Subscription-Connection'
         appType: 'webAppLinux'
-        appName: 'elango-my-shuttle-app' # <-- IMPORTANT: Use the name of your Azure App Service
-        package: '$(Pipeline.Workspace)/drop/**/*.war' # Path to the artifact
-        runtimeStack: 'TOMCAT|9.0-java11' # Or your specific Tomcat/Java version
+        appName: 'elango-my-shuttle-app'
+        package: '$(Pipeline.Workspace)/drop/**/*.war'
+        runtimeStack: 'TOMCAT|9.0-java11'
 
