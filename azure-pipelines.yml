@@ -24,6 +24,16 @@ stages:
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'package'
 
+    # --- NEW TASK TO COPY THE .WAR FILE ---
+    # This copies the build output to the staging directory so it can be published.
+    - task: CopyFiles@2
+      displayName: 'Copy Artifact to Staging Directory'
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)/target'
+        Contents: '*.war'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    # ------------------------------------
+
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact'
       inputs:
@@ -40,7 +50,6 @@ stages:
     displayName: 'Deploy to Azure App Service'
     steps:
 
-    # --- NEW TASK: Download the build artifact ---
     # This task is essential to bring the .war file from the Build stage into this stage.
     - task: DownloadBuildArtifacts@1
       displayName: 'Download Build Artifact'
@@ -49,7 +58,6 @@ stages:
         downloadType: 'single'
         artifactName: 'drop'
         downloadPath: '$(Pipeline.Workspace)'
-    # ----------------------------------------------
 
     - task: AzureWebApp@1
       displayName: 'Deploy WAR to App Service'
@@ -59,5 +67,5 @@ stages:
         appName: 'my-shuttle-app'
         # The path is now correct because the Download task put the files in $(Pipeline.Workspace)
         package: '$(Pipeline.Workspace)/drop/**/*.war'
-        runtimeStack: 'TOMCAT|10.1-java21'
+        runtimeStack: 'TOMCAT|9.0-java21'
 
