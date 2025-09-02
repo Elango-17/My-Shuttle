@@ -1,4 +1,4 @@
-# This YAML uses a manually installed JDK
+# This YAML uses a manually installed JDK and correctly handles artifacts between stages
 
 trigger:
 - main
@@ -13,13 +13,10 @@ stages:
   - job: BuildJob
     displayName: 'Build Maven Project'
     steps:
-    # The JavaToolInstaller task has been REMOVED.
-
     - task: Maven@4
       displayName: 'Build with Maven'
       inputs:
         mavenPomFile: 'pom.xml'
-        # These lines tell Maven to use the path from your environment variable
         javaHomeOption: 'path'
         jdkDirectory: '$(JAVA_HOME_11_X64)'
         jdkArchitectureOption: 'x64'
@@ -42,12 +39,25 @@ stages:
   - job: DeployJob
     displayName: 'Deploy to Azure App Service'
     steps:
+
+    # --- NEW TASK: Download the build artifact ---
+    # This task is essential to bring the .war file from the Build stage into this stage.
+    - task: DownloadBuildArtifacts@1
+      displayName: 'Download Build Artifact'
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(Pipeline.Workspace)'
+    # ----------------------------------------------
+
     - task: AzureWebApp@1
       displayName: 'Deploy WAR to App Service'
       inputs:
         azureSubscription: 'Azure-Subscription-Connection'
         appType: 'webAppLinux'
         appName: 'my-shuttle-app'
+        # The path is now correct because the Download task put the files in $(Pipeline.Workspace)
         package: '$(Pipeline.Workspace)/drop/**/*.war'
-        runtimeStack: 'TOMCAT|9.0-java11'
+        runtimeStack: 'TOMCAT|10.1-java21'
 
