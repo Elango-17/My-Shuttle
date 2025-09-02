@@ -12,7 +12,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'My-Local-Agents'
 
 stages:
 - stage: Build
