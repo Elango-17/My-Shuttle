@@ -1,4 +1,4 @@
-# This YAML assumes you have manually installed JDK 11 and set the JAVA_HOME_11_X64 variable
+# This is a multi-stage pipeline for building and deploying a Java app
 
 trigger:
 - main
@@ -7,24 +7,27 @@ pool:
   name: 'My-Local-Agents'
 
 stages:
+# Build Stage - No changes here
 - stage: Build
   displayName: 'Build Stage'
   jobs:
   - job: BuildJob
     displayName: 'Build Maven Project'
     steps:
-    
-    # --- CHANGE 1: THE JavaToolInstaller TASK HAS BEEN REMOVED ---
+    - task: JavaToolInstaller@0
+      displayName: 'Install JDK 11'
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'Prebuilt'
 
     - task: Maven@4
       displayName: 'Build with Maven'
       inputs:
         mavenPomFile: 'pom.xml'
-        # --- CHANGE 2: MODIFIED THESE THREE LINES ---
-        javaHomeOption: 'path'
-        jdkDirectory: '$(JAVA_HOME_11_X64)'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.11'
         jdkArchitectureOption: 'x64'
-        # --------------------------------------------
         publishJUnitTestResults: false
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'package'
@@ -36,6 +39,7 @@ stages:
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
+# Deploy Stage - Corrected indentation is critical here
 - stage: Deploy
   displayName: 'Deploy Stage'
   dependsOn: Build
